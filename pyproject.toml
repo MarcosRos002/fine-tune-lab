@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fine-tune-lab"
+version = "0.0.0"
+description = "LoRA/QLoRA fine-tuning + distillation lab — produces a cheap classifier for claims-auditor."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Marcos Rostan", email = "rostanmarcos@gmail.com" }]
+keywords = ["lora", "qlora", "peft", "distillation", "fine-tuning", "vllm"]
+
+dependencies = [
+    "transformers>=4.44",
+    "peft>=0.12",
+    "datasets>=2.20",
+    "accelerate>=0.33",
+    "bitsandbytes>=0.43",
+    "scikit-learn>=1.5",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+# vLLM only installs cleanly on Linux+GPU; keep it optional so local CPU dev works.
+serve = ["vllm>=0.5"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/MarcosRos002/fine-tune-lab"
+"Flagship (claims-auditor)" = "https://github.com/MarcosRos002/claims-auditor"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fine_tune_lab"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
