@@ -65,6 +65,7 @@ docs/
 - **Never real patient data.** Training data is synthetic claim-classification examples whose
   labels come from the teacher model or from claims-auditor's classification traces. No PHI, ever.
 - **Lint/format:** `ruff`. **Tests:** `pytest`. See `pyproject.toml`. Run via the `Makefile`.
+- **Package manager (JS/Node tooling): pnpm only — never use npm or npx.**
 - **Cost accounting is a first-class output**, not an afterthought — every eval reports $/request.
 
 ## How to run training on a FREE GPU
