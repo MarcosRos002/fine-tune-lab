@@ -32,15 +32,18 @@ Scaffold, docs, contracts, stubs — see `CLAUDE.md` + `docs/`.
 - `src/fine_tune_lab/**` — package layout with stub functions/classes (docstrings + `...`).
 - `pyproject.toml`, `Makefile`, `notebooks/` — config + free-GPU notebooks.
 
-## Next steps (in order)
+## LoRA training implemented (Phase 1)
+`train/lora.py` (`train_lora` + `build_predictor`, sequence-classification LoRA via PEFT, lazy
+heavy imports) + `train/config.py` (encoder default `google/bert_uncased_L-2_H-128_A-2`). Torch-free
+plumbing (`label_maps`, `load_split`) pinned by `tests/test_train.py`. **Real CPU smoke run:**
+BERT-tiny LoRA, 150 steps/~11s → **0.67 test accuracy** (naive baseline 0.20). README table has the
+real fine-tuned row. `notebooks/colab_lora.ipynb` is a runnable T4 driver (distilbert).
 
-1. **LoRA training on Colab.** Implement `train/lora.py` + flesh out `notebooks/colab_lora.ipynb`
-   to fine-tune a small base (T4) on `data/processed/train.jsonl`, using `serve.serialize_prompt`
-   for prompts (no skew). Produce a LoRA adapter.
-2. **Run the real eval table.** Point `eval/evaluate` at the served adapter vs the Claude Haiku
-   baseline; fill the README before/after table with REAL numbers (the framework is ready).
-3. **Distill** (`notebooks/kaggle_qlora.ipynb` + `distill/`), then **serve** (`serve/vllm_server.py`).
-4. **Wire into claims-auditor**: the served model becomes the Pass-1 classifier behind the
+## Next steps (in order)
+1. **Run on Colab T4** with `colab_lora.ipynb` (distilbert) for a higher-accuracy adapter; update the
+   README row with the GPU numbers.
+2. **Distill** (`notebooks/kaggle_qlora.ipynb` + `distill/`), then **serve** (`serve/vllm_server.py`).
+3. **Wire into claims-auditor**: the served model becomes the Pass-1 classifier behind the
    `ClassifierModel` seam (the classification IO contract guarantees the swap is invisible).
 
 ## Watch out for

@@ -18,21 +18,33 @@ from pathlib import Path
 from fine_tune_lab.data.schema import ClaimInput, ClaimMetadata, DatasetRecord, Label
 
 # Training labels (NEEDS_HUMAN_REVIEW is a serving fallback, not a ground-truth class).
-_TEMPLATES: dict[Label, tuple[str, str]] = {
-    Label.CLEAN: ("Routine office visit, established patient, low complexity", "99213"),
-    Label.UPCODING_SUSPECTED: (
-        "Office visit billed at highest complexity with minimal documentation",
-        "99215",
-    ),
-    Label.UNBUNDLING_SUSPECTED: (
-        "Component procedures billed separately instead of the bundled code",
-        "80048",
-    ),
-    Label.MISSING_DOCUMENTATION: (
-        "Procedure billed without supporting clinical notes attached",
-        "71046",
-    ),
-    Label.DUPLICATE: ("Identical claim line submitted twice on the same date of service", "93000"),
+# Several phrasings per label so the classifier learns the concept, not one string.
+_TEMPLATES: dict[Label, list[tuple[str, str]]] = {
+    Label.CLEAN: [
+        ("Routine office visit, established patient, low complexity", "99213"),
+        ("Standard follow-up consultation, well documented", "99213"),
+        ("Established patient seen for stable chronic condition, notes complete", "99214"),
+    ],
+    Label.UPCODING_SUSPECTED: [
+        ("Office visit billed at highest complexity with minimal documentation", "99215"),
+        ("Level 5 evaluation coded but notes describe a brief routine check", "99215"),
+        ("High-complexity code billed where the encounter appears low complexity", "99214"),
+    ],
+    Label.UNBUNDLING_SUSPECTED: [
+        ("Component procedures billed separately instead of the bundled code", "80048"),
+        ("Panel split into individual tests, each billed on its own line", "80053"),
+        ("Parts of a single bundled service itemized as separate charges", "80048"),
+    ],
+    Label.MISSING_DOCUMENTATION: [
+        ("Procedure billed without supporting clinical notes attached", "71046"),
+        ("Imaging charge submitted but no report or order is on file", "71046"),
+        ("Service billed with no documentation justifying medical necessity", "93000"),
+    ],
+    Label.DUPLICATE: [
+        ("Identical claim line submitted twice on the same date of service", "93000"),
+        ("Same procedure and diagnosis resubmitted for the same encounter", "99213"),
+        ("Exact duplicate of a previously billed line for this date", "80053"),
+    ],
 }
 _ICDS = ["E11.9", "I10", "J06.9", "M54.5", "N18.3"]
 
@@ -44,7 +56,7 @@ def generate_records(n: int, seed: int = 0) -> list[DatasetRecord]:
     records: list[DatasetRecord] = []
     for i in range(n):
         label = labels[i % len(labels)]
-        text, cpt = _TEMPLATES[label]
+        text, cpt = rng.choice(_TEMPLATES[label])
         records.append(
             DatasetRecord(
                 id=f"rec-{seed}-{i:05d}",
