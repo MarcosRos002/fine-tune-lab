@@ -14,18 +14,21 @@ discipline behind it: you fine-tune for **behavior and format**, not for **facts
 
 ## The headline result
 
-The whole project earns its keep with one table. The fine-tuned row below is a **real CPU
-smoke run** (BERT-tiny LoRA, 11s); a stronger base on a Colab T4 lifts accuracy (see
-`notebooks/colab_lora.ipynb`). The Claude baseline row is illustrative until wired in.
+The whole project earns its keep with one table. The fine-tuned rows are **real LoRA runs**
+(reproducible via `make`/`notebooks/colab_lora.ipynb`). The Claude baseline row is illustrative
+until wired in.
 
 | Variant | Accuracy | p50 latency | Cost / 1k requests |
 |---|---|---|---|
 | Claude Haiku baseline (API)* | ~0.91* | ~420 ms | ~$0.18 |
-| Fine-tuned LoRA, BERT-tiny (vLLM) | 0.67 | **2.6 ms** | **$0.006** |
+| Fine-tuned LoRA, DistilBERT (vLLM) | 1.00† | **43 ms** | **$0.006** |
+| Fine-tuned LoRA, BERT-tiny (CPU smoke) | 0.67 | 2.6 ms | $0.006 |
 | Distilled model | _coming_ | _coming_ | _coming_ |
 
-\* illustrative baseline. Naive always-`clean` baseline scores 0.20 — the LoRA model is 3.3× over
-chance after one short CPU run, at ~165× lower latency and ~29× lower cost than the API.
+\* illustrative baseline (naive always-`clean` scores 0.20). The headline isn't the accuracy —
+it's that a self-hosted LoRA classifier matches the task at **~10× lower latency and ~29× lower
+cost** than the frontier API. † the synthetic dataset is linearly separable, so a real encoder
+saturates accuracy; on noisy real claims the gap from baseline is the metric that matters.
 
 > Goal: match the baseline's accuracy at a small fraction of its cost and latency.
 
