@@ -1,10 +1,25 @@
 # Handoff — context for the next session
 
-## Status: Phase 0 complete
+## Status: Phase 1 — light core implemented (no-GPU parts)
 
-Phase 0 was **context-readiness only** — scaffold, documentation, contracts, and minimal stubs.
-No features are implemented yet. The repo is structured so a fresh Claude Code session has full
-context to start building.
+The CPU-runnable core is built and tested (32 tests): the IO contract, synthetic
+dataset generation, and the full eval framework (the headline before/after table).
+The LoRA/distillation training is the Colab/Kaggle part (code + notebooks), not run
+here to keep the dev env light (torch lives in the flagship venv).
+
+### Done (Phase 1)
+- `serve/io.py`: `serialize_prompt` (single source of truth, no train/serve skew) +
+  `parse_output` (robust JSON extraction; non-JSON / out-of-enum → `needs_human_review`).
+- `data/build_dataset.py`: `generate_records` (deterministic, balanced) + `build_dataset`
+  (stratified disjoint `train/val/test.jsonl` + dataset card). Synthetic, no PHI.
+- `eval/cost.py`: `cost_per_request` (API token pricing vs amortized vLLM GPU-hours).
+- `eval/metrics.py`: `evaluate(model, dataset_path)` — accuracy (sklearn), per-class
+  P/R/F1, latency p50/p95, `needs_human_review_rate`.
+- `eval/report.py`: `render_table` — the Haiku-vs-LoRA-vs-distilled markdown table.
+- Verified: a self-hosted vLLM variant comes out ~29× cheaper/1k than the API baseline.
+
+### Phase 0 baseline (still valid)
+Scaffold, docs, contracts, stubs — see `CLAUDE.md` + `docs/`.
 
 ### What exists now
 - `CLAUDE.md` — entry point: what this repo is, its role, conventions, how to run on free GPU.
@@ -19,16 +34,14 @@ context to start building.
 
 ## Next steps (in order)
 
-1. **Define the dataset contract for real.** Finalize the label enum jointly with claims-auditor's
-   classification module, then implement `data/schema.py` (Pydantic) to match `docs/contracts/dataset.md`.
-2. **Build data prep.** Implement `data/build_dataset.py`: pull teacher labels / claims-auditor
-   traces, normalize to the schema, validate, write stratified `train/val/test.jsonl` + a dataset card.
-   Run via `make prep-data`.
-3. **LoRA training notebook on Colab.** Flesh out `notebooks/colab_lora.ipynb` to import `train/`
-   and produce a LoRA adapter on a small base (T4). Keep the loop in `src/...train/lora.py`.
-4. **Eval table.** Implement `eval/metrics.py`: Claude Haiku baseline vs LoRA vs distilled —
-   accuracy, p50 latency, $/1k requests. Fill the README before/after table with real numbers.
-5. Then **distill** (`notebooks/kaggle_qlora.ipynb` + `distill/`), then **serve** (`serve/` vLLM).
+1. **LoRA training on Colab.** Implement `train/lora.py` + flesh out `notebooks/colab_lora.ipynb`
+   to fine-tune a small base (T4) on `data/processed/train.jsonl`, using `serve.serialize_prompt`
+   for prompts (no skew). Produce a LoRA adapter.
+2. **Run the real eval table.** Point `eval/evaluate` at the served adapter vs the Claude Haiku
+   baseline; fill the README before/after table with REAL numbers (the framework is ready).
+3. **Distill** (`notebooks/kaggle_qlora.ipynb` + `distill/`), then **serve** (`serve/vllm_server.py`).
+4. **Wire into claims-auditor**: the served model becomes the Pass-1 classifier behind the
+   `ClassifierModel` seam (the classification IO contract guarantees the swap is invisible).
 
 ## Watch out for
 - Keep `docs/contracts/` in sync with claims-auditor — the cheap model must remain a drop-in.

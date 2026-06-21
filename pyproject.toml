@@ -41,6 +41,7 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["UP042"]  # keep `str, Enum` (not StrEnum) for clean JSON serialization
 
 [tool.pytest.ini_options]
 minversion = "8.0"
